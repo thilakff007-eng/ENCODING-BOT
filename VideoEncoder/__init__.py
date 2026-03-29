@@ -1,54 +1,56 @@
-
-from os import getenv
-import logging
 import os
+import logging
 import time
 from io import BytesIO, StringIO
 from logging.handlers import RotatingFileHandler
-
 from dotenv import load_dotenv
 from pyrogram import Client
 
+# Start time
 botStartTime = time.time()
 
+# Load environment variables
 if os.path.exists('config.env'):
     load_dotenv('config.env')
 
-# Variables
+# Bot credentials
+api_id = int(os.getenv("API_ID"))
+api_hash = os.getenv("API_HASH")
+bot_token = os.getenv("BOT_TOKEN")
+session = os.getenv("SESSION_NAME", "VideoEncoderBot")
 
-api_id = int(getenv("API_ID"))
-api_hash = getenv("API_HASH")
-bot_token = getenv("BOT_TOKEN")
+# Database and directories
+database = os.getenv("MONGO_URI")
+drive_dir = os.getenv("DRIVE_DIR")
+index = os.getenv("INDEX_URL")
+download_dir = os.getenv("DOWNLOAD_DIR", "downloads")
+encode_dir = os.getenv("ENCODE_DIR", "encoded")
 
-database = getenv("MONGO_URI")
-session = getenv("SESSION_NAME")
+# Users
+owner = list(set(int(x) for x in os.getenv("OWNER_ID", "").split()))
+sudo_users = list(set(int(x) for x in os.getenv("SUDO_USERS", "").split()))
+everyone = list(set(int(x) for x in os.getenv("EVERYONE_CHATS", "").split()))
+all_users = everyone + sudo_users + owner
 
-drive_dir = getenv("DRIVE_DIR")
-index = getenv("INDEX_URL")
-
-download_dir = getenv("DOWNLOAD_DIR")
-encode_dir = getenv("ENCODE_DIR")
-
-owner = list(set(int(x) for x in getenv("OWNER_ID").split()))
-sudo_users = list(set(int(x) for x in getenv("SUDO_USERS").split()))
-everyone = list(set(int(x) for x in getenv("EVERYONE_CHATS").split()))
-all = everyone + sudo_users + owner
-
+# Log channel
 try:
-    log = int(getenv("LOG_CHANNEL"))
+    log = int(os.getenv("LOG_CHANNEL"))
 except:
-    log = owner
-    print('Fill log or give user/channel/group id atleast!')
+    log = owner[0] if owner else None
+    if not log:
+        print("⚠️ Fill log channel or provide user/channel/group ID at least!")
 
-
+# In-memory data
 data = []
 
+# Progress format
 PROGRESS = """
 • {0} of {1}
 • Speed: {2}
 • ETA: {3}
 """
 
+# Supported video MIME types
 video_mimetype = [
     "video/x-flv",
     "video/mp4",
@@ -65,6 +67,7 @@ video_mimetype = [
     "video/mpeg"
 ]
 
+# Helper to create in-memory files
 def memory_file(name=None, contents=None, *, bytes=True):
     if isinstance(contents, str) and bytes:
         contents = contents.encode()
@@ -76,16 +79,12 @@ def memory_file(name=None, contents=None, *, bytes=True):
         file.seek(0)
     return file
 
-# Check Folder
-if not os.path.isdir(download_dir):
-    os.makedirs(download_dir)
-if not os.path.isdir(encode_dir):
-    os.makedirs(encode_dir)
+# Check and create folders
+for folder in [download_dir, encode_dir, 'VideoEncoder/utils/extras']:
+    if not os.path.isdir(folder):
+        os.makedirs(folder)
 
-if not os.path.isdir('VideoEncoder/utils/extras'):
-    os.makedirs('VideoEncoder/utils/extras')
-
-# the logging things
+# Logging setup
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -104,14 +103,19 @@ logging.getLogger("pyrogram").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 LOGGER = logging.getLogger(__name__)
 
-# Client
+# Final Client setup — ✅ FIXED plugins path
 app = Client(
-    session,
+    session_name=session,
     bot_token=bot_token,
     api_id=api_id,
     api_hash=api_hash,
-    plugins={'root': os.path.join(__package__, 'plugins')},
+    plugins=dict(root="VideoEncoder/plugins"),  # fixed path
     sleep_threshold=30,
     max_concurrent_transmissions=16,
     workers=32,
-    ipv6=False)
+    ipv6=False
+)
+
+if __name__ == "__main__":
+    print("🚀 Bot is starting...")
+    app.run()

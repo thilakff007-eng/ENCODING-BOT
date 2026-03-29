@@ -12,11 +12,16 @@ dns.resolver.default_resolver.nameservers = ['8.8.8.8']
 
 
 # 🔹 Your bot main function
-async def main():
-    await app.start()
-    await app.send_message(chat_id=log, text=f'<b>Bot Started! @{(await app.get_me()).username}</b>')
-    await idle()
-    await app.stop()
+def start_bot():
+    import time
+    while True:
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(main())  # ✅ direct call
+        except Exception as e:
+            print("Bot crashed:", e)
+            time.sleep(5)
 
 
 # 🔹 Flask app (for Render)

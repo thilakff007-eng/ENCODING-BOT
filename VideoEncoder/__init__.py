@@ -105,11 +105,11 @@ LOGGER = logging.getLogger(__name__)
 
 # Final Client setup — ✅ FIXED plugins path
 app = Client(
-    session_name=session,
+    session,
     bot_token=bot_token,
     api_id=api_id,
     api_hash=api_hash,
-    plugins=dict(root="VideoEncoder/plugins"),  # fixed path
+    plugins=dict(root="VideoEncoder/plugins"),
     sleep_threshold=30,
     max_concurrent_transmissions=16,
     workers=32,
